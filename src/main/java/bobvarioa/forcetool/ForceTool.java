@@ -4,7 +4,9 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -28,7 +30,8 @@ public class ForceTool {
         final var blockPos = event.getPosition().get();
         final var toolTypes = new HashSet<String>();
 
-        final var blockTags = player.level.getBlockState(blockPos).getTags();
+        BlockState blockState = player.level.getBlockState(blockPos);
+        final var blockTags = blockState.getTags();
         for (Iterator<TagKey<Block>> it = blockTags.iterator(); it.hasNext(); ) {
             final var blockTagKey = it.next();
             final String path = blockTagKey.location().getPath();
@@ -42,7 +45,8 @@ public class ForceTool {
             return;
         }
 
-        final var itemTags = player.getItemInHand(InteractionHand.MAIN_HAND).getTags();
+        ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
+        final var itemTags = itemInHand.getTags();
         boolean canMine = itemTags.anyMatch(itemTagKey -> {
             final String path = itemTagKey.location().getPath();
             if (path.startsWith("tools/")) {
@@ -54,6 +58,8 @@ public class ForceTool {
             }
             return false;
         });
+
+        canMine = canMine || itemInHand.isCorrectToolForDrops(blockState);
 
         if (!canMine) {
             event.setCanceled(true);
